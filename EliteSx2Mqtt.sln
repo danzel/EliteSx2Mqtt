@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EliteSx2Mqtt", "EliteSx2Mqtt\EliteSx2Mqtt.csproj", "{99AFEB57-324F-4D6F-AC33-51DEF24D219C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EliteSx2Mqtt.Tests", "EliteSx2Mqtt.Tests\EliteSx2Mqtt.Tests.csproj", "{26B3DC4F-7918-4D42-9634-766A11B5A0FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9FBC7001-B6C8-4011-AF79-B191D63BC18B}
+	EndGlobalSection
+EndGlobal
