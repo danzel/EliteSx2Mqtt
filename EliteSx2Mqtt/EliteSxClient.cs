@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
+using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Xml.Serialization;
 
@@ -8,6 +10,11 @@ public class EliteSxClientOptions
 	public string IpAddress { get; set; } = null!;
 	public string Username { get; set; } = null!;
 	public string Password { get; set; } = null!;
+
+	/// <summary>
+	/// When the auth timeout is less than this, refresh auth
+	/// </summary>
+	public TimeSpan AuthRefreshTime { get; set; } = TimeSpan.FromSeconds(65);
 }
 
 public class EliteSxClient
@@ -18,6 +25,9 @@ public class EliteSxClient
 
 	private readonly SemaphoreSlim _authLock = new(1);
 	private string? _guid;
+
+	private int? _authExpireTimeSeconds;
+	private Stopwatch? _authExpireAge;
 
 	public EliteSxClient(ILogger<EliteSxClient> logger, IOptions<EliteSxClientOptions> options, HttpClient httpClient)
 	{
@@ -31,30 +41,87 @@ public class EliteSxClient
 		return $"http://{_options.IpAddress}/{path}?guid={_guid}";
 	}
 
-	public async Task LogIn()
+	public async Task EnsureAuthenticated()
 	{
+		//TODO: Be more reliable in here
+
 		await _authLock.WaitAsync();
 		try
 		{
-			_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
-
-			var content = new FormUrlEncodedContent(
-				new Dictionary<string, string>
+			if (_guid == null)
+			{
+				_logger.LogInformation("Attempting authentication");
+				await LogIn();
+			}
+			else if (_authExpireTimeSeconds == null || _authExpireAge == null)
+			{
+				//TODO: poll.xml shows time until expire
+				//To refresh, GET refr.xml which returns the same response and refreshes to 1200 seconds
+				await PollAuth("poll.xml");
+			}
+			else
+			{
+				if (TimeSpan.FromSeconds(_authExpireTimeSeconds.Value) - _authExpireAge.Elapsed <= _options.AuthRefreshTime)
 				{
-					{ "user", _options.Username },
-					{ "pass", _options.Password },
-					{ "guid", _guid }
-				});
-			var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds}", content);
-			var responseStr = await response.Content.ReadAsStringAsync();
+					//Looks like this URL isn't valid until we near timeout
+					_logger.LogInformation("Refreshing authentication");
+					await PollAuth("refr.xml");
+				}
+			}
+		}
+		catch (Exception ex) when (_guid is null)
+		{
+			_logger.LogError(ex, "Failed to Authenticate");
+			throw;
+		}
+		catch (Exception ex)
+		{
+			_logger.LogWarning(ex, "Failed to poll/reauthenticate, will try Login again");
 
-			if (responseStr != "ok")
-				throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
+			_guid = null;
+			_authExpireAge = null;
+			_authExpireTimeSeconds = null;
+
+			try
+			{
+				await LogIn();
+			}
+			catch (Exception ex2)
+			{
+				_logger.LogError(ex2, "Failed to Authenticate again");
+				throw;
+			}
 		}
 		finally
 		{
 			_authLock.Release();
 		}
+	}
+
+	private async Task LogIn()
+	{
+		_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
+
+		var content = new FormUrlEncodedContent(
+			new Dictionary<string, string>
+			{
+					{ "user", _options.Username },
+					{ "pass", _options.Password },
+					{ "guid", _guid }
+			});
+		var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds}", content);
+		var responseStr = await response.Content.ReadAsStringAsync();
+
+		if (responseStr != "ok")
+			throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
+	}
+
+	private async Task PollAuth(string path)
+	{
+		var response = await Get<PollResponse>(path, "poll auth");
+
+		_authExpireTimeSeconds = response.TimeSeconds;
+		_authExpireAge = Stopwatch.StartNew();
 	}
 
 	private async Task<T> Get<T>(string path, string textForError) where T : class
@@ -131,10 +198,6 @@ public class EliteSxClient
 			$"pn{desired.ToString().ToLowerInvariant()}=pn{partitionIndex}" +
 			$"?GUID={_guid}");
 	}
-
-
-	//TODO: poll.xml shows time until expire
-	//To refresh, GET refr.xml which returns the same response and refreshes to 1200 seconds
 }
 
 [XmlRoot(ElementName = "priv")]
@@ -336,6 +399,13 @@ public enum ZoneState
 	Alarm,
 	[XmlEnum("6")]
 	SealedLowBattery
+}
+
+[XmlRoot("poll")]
+public class PollResponse
+{
+	[XmlElement("t")]
+	public int TimeSeconds { get; set; }
 }
 
 public enum DesiredOutputState

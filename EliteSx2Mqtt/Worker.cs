@@ -13,33 +13,13 @@ public class EliteSxPoller : BackgroundService
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		await _client.LogIn();
-
-		foreach (var name in (await _client.GetOutputNames()).Names)
-			Console.WriteLine($"{name.Index}: {name.Name}");
-
-		foreach (var status in (await _client.GetOutputStatus()).Statuses)
-			Console.WriteLine($"{status.Index}: {status.State}");
-
-		await _client.ControlOutput(4, DesiredOutputState.On);
-
-		await Task.Delay(1000, stoppingToken);
-
-		foreach (var status in (await _client.GetOutputStatus()).Statuses)
-			Console.WriteLine($"{status.Index}: {status.State}");
-
-		await _client.ControlOutput(4, DesiredOutputState.Off);
-
-		await Task.Delay(1000, stoppingToken);
-
-		foreach (var status in (await _client.GetOutputStatus()).Statuses)
-			Console.WriteLine($"{status.Index}: {status.State}");
-
 		while (!stoppingToken.IsCancellationRequested)
 		{
+			_logger.LogInformation("Still alive {now}", DateTimeOffset.Now);
+			await _client.EnsureAuthenticated();
+			await _client.GetZoneStatus();
 
-			_logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-			await Task.Delay(1000, stoppingToken);
+			await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
 		}
 	}
 }
