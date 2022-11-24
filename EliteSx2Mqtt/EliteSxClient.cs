@@ -21,7 +21,7 @@ public class EliteSxClient
 	private readonly EliteSxClientOptions _options;
 
 	private readonly SemaphoreSlim _authLock = new(1);
-	private string _guid;
+	private string? _guid;
 
 	public EliteSxClient(ILogger<EliteSxClient> logger, IOptions<EliteSxClientOptions> options, HttpClient httpClient)
 	{
@@ -100,13 +100,13 @@ public class PrivilegesResponse
 	public int Version { get; set; }
 
 	[XmlElement(ElementName = "pt")]
-	public PrivilegeElement[] Pt { get; set; }
+	public PrivilegeElement[] Pt { get; set; } = null!;
 }
 
 public class PrivilegeElement
 {
 	[XmlAttribute("xd")]
-	public string Xd { get; set; }
+	public string Xd { get; set; } = null!;
 
 	[XmlText]
 	public int Contents { get; set; }
@@ -121,7 +121,7 @@ public class PrivilegeElement
 public class PartitionNamesResponse
 {
 	[XmlElement("pn")]
-	public NameElement[] Names { get; set; }
+	public NameElement[] Names { get; set; } = null!;
 }
 
 public class NameElement
@@ -130,19 +130,19 @@ public class NameElement
 	public int Index { get; set; }
 
 	[XmlElement(ElementName = "name")]
-	public string Name { get; set; }
+	public string Name { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "oname")]
 public class OutputNamesResponse
 {
 	[XmlElement("pn")]
-	public NameElement[] Names { get; set; }
+	public NameElement[] Names { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "zname")]
 public class ZoneNamesResponse
 {
 	[XmlElement("pn")]
-	public NameElement[] Names { get; set; }
+	public NameElement[] Names { get; set; } = null!;
 }
