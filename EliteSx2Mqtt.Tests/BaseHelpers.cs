@@ -14,10 +14,9 @@ public class BaseHelpers
 		var client = new EliteSxClient(NullLogger<EliteSxClient>.Instance, Options.Create(new EliteSxClientOptions
 		{
 			IpAddress = "127.0.0.1",
-			UserName = "My User",
+			Username = "My User",
 			Password = "1234"
 		}), http.ToHttpClient());
-
 
 		return await invocation(client);
 	}
