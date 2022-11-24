@@ -103,22 +103,33 @@ public class EliteSxClient
 		return await Get<ZoneStatusResponse>("zstats.xml", "zone status");
 	}
 
-	public async Task ControlOutput(int outputIndex, DesiredOutputState desired)
+	private async Task Post(string path, string content)
 	{
-		var path = $"http://{_options.IpAddress}/ot.php";
+		path = $"http://{_options.IpAddress}/{path}";
 
 		//Cannot use FormUrlEncodedContent here as the fields need to be separated by ?, not by &
-		var content = new StringContent(
-			$"op{desired.ToString().ToLowerInvariant()}=op{outputIndex}" +
-			$"?GUID={_guid}",
-			MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
+		var stringContent = new StringContent(content, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
 
-		using var response = await _httpClient.PostAsync(path, content);
+		using var response = await _httpClient.PostAsync(path, stringContent);
 		response.EnsureSuccessStatusCode();
 		var result = await response.Content.ReadAsStringAsync();
 
 		if (result != "Success")
 			throw new Exception($"Expected 'Success' but received '{result}'");
+	}
+
+	public async Task ControlOutput(int outputIndex, DesiredOutputState desired)
+	{
+		await Post("ot.php",
+			$"op{desired.ToString().ToLowerInvariant()}=op{outputIndex}" +
+			$"?GUID={_guid}");
+	}
+
+	public async Task ControlPartition(int partitionIndex, DesiredPartitionState desired)
+	{
+		await Post("pn.php",
+			$"pn{desired.ToString().ToLowerInvariant()}=pn{partitionIndex}" +
+			$"?GUID={_guid}");
 	}
 
 
@@ -331,4 +342,17 @@ public enum DesiredOutputState
 {
 	Off,
 	On
+}
+
+public enum DesiredPartitionState
+{
+	/// <summary>
+	/// "Armed"
+	/// </summary>
+	Away,
+
+	/// <summary>
+	/// "Disarmed"
+	/// </summary>
+	Off
 }
