@@ -19,7 +19,7 @@ public class EliteSxPoller : BackgroundService
 			await _client.EnsureAuthenticated();
 			await _client.GetZoneStatus();
 
-			await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+			await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 		}
 	}
 }

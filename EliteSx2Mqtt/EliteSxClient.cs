@@ -28,6 +28,7 @@ public class EliteSxClient
 
 	private int? _authExpireTimeSeconds;
 	private Stopwatch? _authExpireAge;
+	private Stopwatch? _timeSinceLastPoll;
 
 	public EliteSxClient(ILogger<EliteSxClient> logger, IOptions<EliteSxClientOptions> options, HttpClient httpClient)
 	{
@@ -52,20 +53,26 @@ public class EliteSxClient
 			{
 				_logger.LogInformation("Attempting authentication");
 				await LogIn();
-			}
-			else if (_authExpireTimeSeconds == null || _authExpireAge == null)
-			{
-				//TODO: poll.xml shows time until expire
-				//To refresh, GET refr.xml which returns the same response and refreshes to 1200 seconds
+
+				_logger.LogInformation("Polling authentication");
 				await PollAuth("poll.xml");
+			}
+			else if (_authExpireTimeSeconds == null || _authExpireAge == null || _timeSinceLastPoll == null)
+			{
+				throw new Exception("Got guid but not auth expire?");
 			}
 			else
 			{
 				if (TimeSpan.FromSeconds(_authExpireTimeSeconds.Value) - _authExpireAge.Elapsed <= _options.AuthRefreshTime)
 				{
-					//Looks like this URL isn't valid until we near timeout
 					_logger.LogInformation("Refreshing authentication");
 					await PollAuth("refr.xml");
+				}
+				//UI hits this every 5 seconds, if you don't you get 404 (I assume we get logged out)
+				else if (_timeSinceLastPoll.Elapsed >= TimeSpan.FromSeconds(5))
+				{
+					_logger.LogInformation("Polling authentication");
+					await PollAuth("poll.xml");
 				}
 			}
 		}
@@ -122,6 +129,7 @@ public class EliteSxClient
 
 		_authExpireTimeSeconds = response.TimeSeconds;
 		_authExpireAge = Stopwatch.StartNew();
+		_timeSinceLastPoll = Stopwatch.StartNew();
 	}
 
 	private async Task<T> Get<T>(string path, string textForError) where T : class
