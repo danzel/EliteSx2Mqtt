@@ -13,6 +13,8 @@ public class EliteSxPoller : BackgroundService
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
+		await _client.IsInitialized;
+
 		while (!stoppingToken.IsCancellationRequested)
 		{
 			_logger.LogInformation("Still alive {now}", DateTimeOffset.Now);

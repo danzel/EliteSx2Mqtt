@@ -8,6 +8,7 @@ IHost host = Host.CreateDefaultBuilder(args)
 		services.AddHttpClient();
 		services.AddSingleton<EliteSxClient>();
 
+		services.AddHostedService(s => s.GetRequiredService<EliteSxClient>());
 		services.AddHostedService<EliteSxPoller>();
 	})
 	.Build();

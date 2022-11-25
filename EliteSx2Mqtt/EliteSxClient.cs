@@ -17,7 +17,7 @@ public class EliteSxClientOptions
 	public TimeSpan AuthRefreshTime { get; set; } = TimeSpan.FromSeconds(65);
 }
 
-public class EliteSxClient
+public class EliteSxClient : BackgroundService
 {
 	private readonly ILogger<EliteSxClient> _logger;
 	private readonly HttpClient _httpClient;
@@ -30,11 +30,30 @@ public class EliteSxClient
 	private Stopwatch? _authExpireAge;
 	private Stopwatch? _timeSinceLastPoll;
 
+	private readonly TaskCompletionSource _hasLoggedInOnce = new();
+	public Task IsInitialized => _hasLoggedInOnce.Task;
+
 	public EliteSxClient(ILogger<EliteSxClient> logger, IOptions<EliteSxClientOptions> options, HttpClient httpClient)
 	{
 		_logger = logger;
 		_httpClient = httpClient;
 		_options = options.Value;
+	}
+
+	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+	{
+		while (!stoppingToken.IsCancellationRequested)
+		{
+			try
+			{
+				await EnsureAuthenticated();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "Auth failed");
+			}
+			await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+		}
 	}
 
 	private string GetUrl(string path)
@@ -44,59 +63,67 @@ public class EliteSxClient
 
 	public async Task EnsureAuthenticated()
 	{
-		//TODO: Be more reliable in here
-
 		await _authLock.WaitAsync();
 		try
 		{
 			if (_guid == null)
 			{
-				_logger.LogInformation("Attempting authentication");
-				await LogIn();
+				try
+				{
+					_logger.LogInformation("Attempting authentication");
+					await LogIn();
 
-				_logger.LogInformation("Polling authentication");
-				await PollAuth("poll.xml");
-			}
-			else if (_authExpireTimeSeconds == null || _authExpireAge == null || _timeSinceLastPoll == null)
-			{
-				throw new Exception("Got guid but not auth expire?");
-			}
-			else
-			{
-				if (TimeSpan.FromSeconds(_authExpireTimeSeconds.Value) - _authExpireAge.Elapsed <= _options.AuthRefreshTime)
-				{
-					_logger.LogInformation("Refreshing authentication");
-					await PollAuth("refr.xml");
-				}
-				//UI hits this every 5 seconds, if you don't you get 404 (I assume we get logged out)
-				else if (_timeSinceLastPoll.Elapsed >= TimeSpan.FromSeconds(5))
-				{
 					_logger.LogInformation("Polling authentication");
 					await PollAuth("poll.xml");
 				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Failed to Authenticate");
+					throw;
+				}
 			}
-		}
-		catch (Exception ex) when (_guid is null)
-		{
-			_logger.LogError(ex, "Failed to Authenticate");
-			throw;
-		}
-		catch (Exception ex)
-		{
-			_logger.LogWarning(ex, "Failed to poll/reauthenticate, will try Login again");
-
-			_guid = null;
-			_authExpireAge = null;
-			_authExpireTimeSeconds = null;
-
-			try
+			else
 			{
-				await LogIn();
-			}
-			catch (Exception ex2)
-			{
-				_logger.LogError(ex2, "Failed to Authenticate again");
-				throw;
+				try
+				{
+
+					if (_authExpireTimeSeconds == null || _authExpireAge == null || _timeSinceLastPoll == null)
+					{
+						throw new Exception("Got guid but not auth expire?");
+					}
+					else
+					{
+						if (TimeSpan.FromSeconds(_authExpireTimeSeconds.Value) - _authExpireAge.Elapsed <= _options.AuthRefreshTime)
+						{
+							_logger.LogInformation("Refreshing authentication");
+							await PollAuth("refr.xml");
+						}
+						//UI hits this every 5 seconds, if you don't you get 404 (I assume we get logged out)
+						else if (_timeSinceLastPoll.Elapsed >= TimeSpan.FromSeconds(5))
+						{
+							_logger.LogInformation("Polling authentication");
+							await PollAuth("poll.xml");
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(ex, "Failed to poll/refresh, will try Login again");
+
+					_guid = null;
+					_authExpireAge = null;
+					_authExpireTimeSeconds = null;
+
+					try
+					{
+						await LogIn();
+					}
+					catch (Exception ex2)
+					{
+						_logger.LogError(ex2, "Failed to Authenticate again");
+						throw;
+					}
+				}
 			}
 		}
 		finally
@@ -121,6 +148,8 @@ public class EliteSxClient
 
 		if (responseStr != "ok")
 			throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
+
+		_hasLoggedInOnce.TrySetResult();
 	}
 
 	private async Task PollAuth(string path)
