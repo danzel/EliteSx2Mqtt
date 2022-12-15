@@ -1,0 +1,3 @@
+[submodule "ToMqttNet"]
+	path = ToMqttNet
+	url = https://github.com/danzel/ToMqttNet.git
