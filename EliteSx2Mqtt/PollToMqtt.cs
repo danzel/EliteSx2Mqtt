@@ -10,9 +10,9 @@ namespace EliteSx2Mqtt;
 /// Configures these on MQTT
 /// Continuously polls the EliteSx to keep the status up to date in MQTT
 /// </summary>
-public class EliteSxPoller : BackgroundService
+public class PollToMqtt : BackgroundService
 {
-	private readonly ILogger<EliteSxPoller> _logger;
+	private readonly ILogger<PollToMqtt> _logger;
 	private readonly IEliteSxClient _client;
 	private readonly IMqttConnectionService _mqtt;
 
@@ -22,7 +22,10 @@ public class EliteSxPoller : BackgroundService
 	public Zone[]? Zones { get; private set; }
 	public Output[]? Outputs { get; private set; }
 
-	public EliteSxPoller(ILogger<EliteSxPoller> logger, IEliteSxClient client, IMqttConnectionService mqtt)
+	private readonly TaskCompletionSource _populatedEverything = new();
+	public Task PopulatedEverything => _populatedEverything.Task;
+
+	public PollToMqtt(ILogger<PollToMqtt> logger, IEliteSxClient client, IMqttConnectionService mqtt)
 	{
 		_logger = logger;
 		_client = client;
@@ -46,6 +49,8 @@ public class EliteSxPoller : BackgroundService
 		await FetchAndPopulatePartitions();
 		await FetchAndPopulateZones();
 		await FetchAndPopulateOutputs();
+		_populatedEverything.SetResult();
+
 		//Publish them
 		await PublishDiscovery();
 

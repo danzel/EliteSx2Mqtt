@@ -12,9 +12,9 @@ IHost host = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<IEliteSxClient, EliteSxClient>();
 		services.AddHostedService(s => (BackgroundService)s.GetRequiredService<IEliteSxClient>());
 
-		services.AddHostedService<EliteSxPoller>();
-
-		services.AddHostedService<Publisher>();
+		services.AddSingleton<PollToMqtt>();
+		services.AddHostedService(s => s.GetRequiredService<PollToMqtt>());
+		services.AddHostedService<MqttToEliteSx>();
 
 		services.AddMqttConnection(c => context.Configuration.GetSection("Mqtt").Bind(c));
 	})
