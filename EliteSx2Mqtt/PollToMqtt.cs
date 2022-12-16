@@ -82,7 +82,9 @@ public class PollToMqtt : BackgroundService
 				Name = p.Name,
 				Device = _device,
 				UniqueId = "partition-" + p.Index,
-				Availability = new List<MqttDiscoveryAvailablilty>()
+				Availability = new List<MqttDiscoveryAvailablilty>(),
+				CommandTopic = null!,
+				StateTopic = null!,
 			}.AddDefaultAvailabilityTopic(_mqtt)
 			.PopulateStateTopic(_mqtt)
 			.PopulateCommandTopic(_mqtt);
@@ -107,7 +109,8 @@ public class PollToMqtt : BackgroundService
 				Device = _device,
 				UniqueId = "zone-" + z.Index,
 				DeviceClass = "motion",
-				Availability = new List<MqttDiscoveryAvailablilty>()
+				Availability = new List<MqttDiscoveryAvailablilty>(),
+				StateTopic = null!,
 			}.AddDefaultAvailabilityTopic(_mqtt)
 			.PopulateStateTopic(_mqtt);
 
@@ -285,7 +288,7 @@ public class PollToMqtt : BackgroundService
 		}
 	}
 
-	private async Task PublishState<T>(T config, string payload) where T : MqttDiscoveryConfig, IMqttDiscoveryDeviceWithState
+	private async Task PublishState<T>(T config, string payload) where T : MqttDiscoveryConfig, IMqttDiscoveryDeviceWithStateGetter
 	{
 		await _mqtt.PublishAsync(new MqttApplicationMessage
 		{
