@@ -17,7 +17,28 @@ public class EliteSxClientOptions
 	public TimeSpan AuthRefreshTime { get; set; } = TimeSpan.FromSeconds(65);
 }
 
-public class EliteSxClient : BackgroundService
+public interface IEliteSxClient
+{
+	Task IsInitialized { get; }
+
+	Task ControlOutput(int outputIndex, DesiredOutputState desired);
+	Task ControlPartition(int partitionIndex, DesiredPartitionState desired);
+
+	Task EnsureAuthenticated();
+
+	Task<SystemInformationResponse> GetSystemInformation();
+	Task<PrivilegesResponse> GetPrivileges();
+
+	Task<PartitionNamesResponse> GetPartitionNames();
+	Task<ZoneNamesResponse> GetZoneNames();
+	Task<OutputNamesResponse> GetOutputNames();
+
+	Task<PartitionStatusResponse> GetPartitionStatus();
+	Task<ZoneStatusResponse> GetZoneStatus();
+	Task<OutputStatusResponse> GetOutputStatus();
+}
+
+public class EliteSxClient : BackgroundService, IEliteSxClient
 {
 	private readonly ILogger<EliteSxClient> _logger;
 	private readonly HttpClient _httpClient;
@@ -73,7 +94,7 @@ public class EliteSxClient : BackgroundService
 					_logger.LogInformation("Attempting authentication");
 					await LogIn();
 
-					_logger.LogInformation("Polling authentication");
+					_logger.LogDebug("Polling authentication");
 					await PollAuth("poll.xml");
 				}
 				catch (Exception ex)
@@ -101,7 +122,7 @@ public class EliteSxClient : BackgroundService
 						//UI hits this every 5 seconds, if you don't you get 404 (I assume we get logged out)
 						else if (_timeSinceLastPoll.Elapsed >= TimeSpan.FromSeconds(5))
 						{
-							_logger.LogInformation("Polling authentication");
+							_logger.LogDebug("Polling authentication");
 							await PollAuth("poll.xml");
 						}
 					}
@@ -175,6 +196,11 @@ public class EliteSxClient : BackgroundService
 	public async Task<PrivilegesResponse> GetPrivileges()
 	{
 		return await Get<PrivilegesResponse>("priv.xml", "privileges");
+	}
+
+	public async Task<SystemInformationResponse> GetSystemInformation()
+	{
+		return await Get<SystemInformationResponse>("sysinfo.xml", "system information");
 	}
 
 	public async Task<PartitionNamesResponse> GetPartitionNames()
@@ -259,6 +285,22 @@ public class PrivilegeElement
 	{
 		return $"{Xd}: {Contents}";
 	}
+}
+
+[XmlRoot(ElementName = "sysinfo")]
+public class SystemInformationResponse
+{
+	[XmlElement(ElementName = "info")]
+	public SystemInformationElement[] Info = null!;
+}
+
+public class SystemInformationElement
+{
+	[XmlElement("lbl")]
+	public string Lbl { get; set; } = null!;
+
+	[XmlElement("val")]
+	public string Val { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "pname")]

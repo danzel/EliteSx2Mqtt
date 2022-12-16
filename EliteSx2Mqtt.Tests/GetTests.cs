@@ -122,4 +122,19 @@ public class GetTests : BaseHelpers
 		Assert.Equal(13, result.Statuses[11].Index);
 		Assert.Equal(ZoneState.Sealed, result.Statuses[11].State);
 	}
+
+	[Fact]
+	public async Task CanDeserializeSystemInformation()
+	{
+		var result = await XmlGet("sysinfo.xml", """
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<?xml-stylesheet type="text/xsl" href="sysinfo.xsl"?>
+<sysinfo><info><lbl>System</lbl><val>Elite-SX (12345678) Ver 10.0.307</val></info><info><lbl>Mains</lbl><val>OK</val></info><info><lbl>Battery</lbl><val>OK</val></info><info><lbl>DHCP</lbl><val>Enabled</val></info><info><lbl>IP Address</lbl><val>1.1.1.4 (DHCP lease)</val></info><info><lbl>Default Gateway</lbl><val>1.1.1.2 (DHCP lease)</val></info><info><lbl>DNS1</lbl><val>1.1.1.1 (DHCP lease)</val></info><info><lbl>DNS2</lbl><val>1.1.1.5 (DHCP lease)</val></info><info><lbl>NTP1</lbl><val>host (1.1.1.7) OK</val></info><info><lbl>NTP2</lbl><val>host2 (1.1.1.8) OK</val></info><info><lbl>IP Reporting</lbl><val>Ch1 1.1.1.9 (1.1.1.9)</val></info><info><lbl>Zone Expander</lbl><val>Id.1 Ver 0.1.30 (12345678) Online</val></info><info><lbl>Output Expander</lbl><val>Id.3 Ver 0.1.15 (12345678) Online</val></info><info><lbl>File Status</lbl><val>1.256.496.2</val></info><info><lbl>File Status</lbl><val>2.400.696.5</val></info><info><lbl>File Status</lbl><val>3.64.496.10</val></info><info><lbl>File Status</lbl><val>4.224.496.20</val></info><info><lbl>File Status</lbl><val>5.576.1000.1</val></info></sysinfo>
+""", c => c.GetSystemInformation());
+
+		Assert.Equal(18, result.Info.Length);
+
+		Assert.Equal("System", result.Info[0].Lbl);
+		Assert.Equal("Elite-SX (12345678) Ver 10.0.307", result.Info[0].Val);
+	}
 }
