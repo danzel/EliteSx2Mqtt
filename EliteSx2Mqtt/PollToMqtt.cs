@@ -34,35 +34,56 @@ public class PollToMqtt : BackgroundService
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		await _client.IsInitialized;
-
-		var systemInfo = await _client.GetSystemInformation();
-		var system = systemInfo.Info.Single(x => x.Lbl == "System").Val.Split(')', '(').Select(x => x.Trim()).ToArray(); //"Elite-SX (12345678) Ver 10.0.307"
-		_device = new MqttDiscoveryDevice
+		try
 		{
-			Name = $"{system[0]} ({system[1]})",
-			SoftwareVersion = system[2].Replace("Ver ", ""),
-			Identifiers = new List<string> { system[0], system[1] },
-		};
+			await _client.IsInitialized;
 
-		//Load all the bits
-		await FetchAndPopulatePartitions();
-		await FetchAndPopulateZones();
-		await FetchAndPopulateOutputs();
-		_populatedEverything.SetResult();
+			var systemInfo = await _client.GetSystemInformation();
+			var system = systemInfo.Info.Single(x => x.Lbl == "System").Val.Split(')', '(').Select(x => x.Trim()).ToArray(); //"Elite-SX (12345678) Ver 10.0.307"
+			_device = new MqttDiscoveryDevice
+			{
+				Name = $"{system[0]} ({system[1]})",
+				SoftwareVersion = system[2].Replace("Ver ", ""),
+				Identifiers = new List<string> { system[0], system[1] },
+			};
 
-		//Publish them
-		await PublishDiscovery();
+			//Load all the bits
+			await FetchAndPopulatePartitions();
+			await FetchAndPopulateZones();
+			await FetchAndPopulateOutputs();
+			_populatedEverything.SetResult();
+
+			//Publish them
+			await PublishDiscovery();
+		}
+		catch (Exception ex)
+		{
+			_logger.LogCritical(ex, "Failed to initialise");
+			return;
+		}
 
 
 		_logger.LogInformation("Entering polling loop");
+		int failuresInARow = 0;
 		while (!stoppingToken.IsCancellationRequested)
 		{
 			//Publish state when it changes
-			await UpdatePartitions();
-			await UpdateZones();
-			await UpdateOutputs();
-
+			try
+			{
+				await UpdatePartitions();
+				await UpdateZones();
+				await UpdateOutputs();
+			}
+			catch (Exception ex) when (failuresInARow > 0 && failuresInARow % 10 == 0)
+			{
+				_logger.LogWarning(ex, "Failed during polling");
+				failuresInARow++;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogDebug(ex, "Failed during polling");
+				failuresInARow++;
+			}
 			await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 		}
 	}
@@ -97,7 +118,7 @@ public class PollToMqtt : BackgroundService
 	{
 		//Fetch zone names and populate Zones
 		_logger.LogInformation("Fetching Zone names");
-	
+
 		var zoneNames = await _client.GetZoneNames();
 		Zones = new Zone[zoneNames.Names.Length];
 		for (var i = 0; i < zoneNames.Names.Length; i++)
@@ -189,7 +210,7 @@ public class PollToMqtt : BackgroundService
 					PartitionState.UnknownState => "unknown",
 					_ => null,
 				};
-				
+
 				if (payload == null)
 				{
 					_logger.LogWarning("Unhandled PartitionState {index} {state}", s.Index, s.State);
