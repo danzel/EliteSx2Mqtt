@@ -1,4 +1,7 @@
-﻿using MQTTnet;
+﻿using EliteSx;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Packets;
 using System.Threading.Tasks.Dataflow;
 using ToMqttNet;
 

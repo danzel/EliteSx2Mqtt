@@ -1,3 +1,4 @@
+using EliteSx;
 using EliteSx2Mqtt;
 using ToMqttNet;
 

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using RichardSzalay.MockHttp;
 
-namespace EliteSx2Mqtt.Tests;
+namespace EliteSx.Tests;
 public class BaseHelpers
 {
 	protected static async Task<T> XmlGet<T>(string path, string xml, Func<EliteSxClient, Task<T>> invocation)

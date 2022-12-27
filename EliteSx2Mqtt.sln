@@ -5,9 +5,11 @@ VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EliteSx2Mqtt", "EliteSx2Mqtt\EliteSx2Mqtt.csproj", "{99AFEB57-324F-4D6F-AC33-51DEF24D219C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EliteSx2Mqtt.Tests", "EliteSx2Mqtt.Tests\EliteSx2Mqtt.Tests.csproj", "{26B3DC4F-7918-4D42-9634-766A11B5A0FE}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ToMqttNet", "ToMqttNet\src\ToMqttNet\ToMqttNet.csproj", "{8F5BBD71-3447-498E-A2BF-1DF7231A10A7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EliteSx", "EliteSx\EliteSx.csproj", "{6730B064-C2F0-4D33-8D05-B0142D47BDCE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EliteSx.Tests", "EliteSx.Tests\EliteSx.Tests.csproj", "{82EFC627-3A0E-4449-8C71-EFD2A944DEB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +21,18 @@ Global
 		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99AFEB57-324F-4D6F-AC33-51DEF24D219C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26B3DC4F-7918-4D42-9634-766A11B5A0FE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8F5BBD71-3447-498E-A2BF-1DF7231A10A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8F5BBD71-3447-498E-A2BF-1DF7231A10A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F5BBD71-3447-498E-A2BF-1DF7231A10A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F5BBD71-3447-498E-A2BF-1DF7231A10A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6730B064-C2F0-4D33-8D05-B0142D47BDCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6730B064-C2F0-4D33-8D05-B0142D47BDCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6730B064-C2F0-4D33-8D05-B0142D47BDCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6730B064-C2F0-4D33-8D05-B0142D47BDCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82EFC627-3A0E-4449-8C71-EFD2A944DEB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82EFC627-3A0E-4449-8C71-EFD2A944DEB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82EFC627-3A0E-4449-8C71-EFD2A944DEB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82EFC627-3A0E-4449-8C71-EFD2A944DEB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

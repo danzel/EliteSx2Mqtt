@@ -1,4 +1,4 @@
-namespace EliteSx2Mqtt.Tests;
+namespace EliteSx.Tests;
 
 public class GetTests : BaseHelpers
 {
