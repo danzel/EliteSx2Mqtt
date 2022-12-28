@@ -1,0 +1,14 @@
+[Unit]
+Description=EliteSx2Mqtt
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+WorkingDirectory=/opt/bin/elitesx2mqtt/
+ExecStart=/opt/bin/elitesx2mqtt/EliteSx2Mqtt
+
+[Install]
+WantedBy=multi-user.target

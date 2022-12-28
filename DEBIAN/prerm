@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#Disable the systemd service
+systemctl stop elitesx2mqtt.service
+systemctl disable elitesx2mqtt.service

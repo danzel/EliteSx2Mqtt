@@ -1,0 +1,5 @@
+Package: elitesx2mqtt
+Version: 0.0.0
+Architecture: amd64
+Maintainer: danzel
+Description: Connect to an EliteSx alarm over HTTP and publish it to MQTT for use by Home Assistant
