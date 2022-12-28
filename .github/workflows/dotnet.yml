@@ -28,19 +28,21 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-
+    - name: Create version number
+      id: version
+      run: echo "v=$(date +'%Y.%m%d.${{github.run_number}}')" >> $GITHUB_OUTPUT
     - name: Publish linux-arm
-      run: dotnet publish EliteSx2Mqtt/EliteSx2Mqtt.csproj -r linux-arm --self-contained true -p:PublishSingleFile=true -c Release -o ${{env.DOTNET_ROOT}}/linux-arm
+      run: dotnet publish EliteSx2Mqtt/EliteSx2Mqtt.csproj -r linux-arm --self-contained true -p:PublishSingleFile=true -p:Version=${{steps.version.outputs.v}} -c Release -o ${{env.DOTNET_ROOT}}/linux-arm
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v3
       with:
-        name: linux-arm
+        name: linux-arm-${{steps.version.outputs.v}}
         path: ${{env.DOTNET_ROOT}}/linux-arm
 
     - name: Publish linux-x64
-      run: dotnet publish EliteSx2Mqtt/EliteSx2Mqtt.csproj -r linux-x64 --self-contained true -p:PublishSingleFile=true -c Release -o ${{env.DOTNET_ROOT}}/linux-x64
+      run: dotnet publish EliteSx2Mqtt/EliteSx2Mqtt.csproj -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{steps.version.outputs.v}} -c Release -o ${{env.DOTNET_ROOT}}/linux-x64
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v3
       with:
-        name: linux-x64
+        name: linux-x64-${{steps.version.outputs.v}}
         path: ${{env.DOTNET_ROOT}}/linux-x64
