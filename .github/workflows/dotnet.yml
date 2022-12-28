@@ -38,7 +38,7 @@ jobs:
 
     - name: Create Deb Package
       run: |
-        sed -i 's/0.0.0/${{steps.version.outputs.v}}/g' DEBIAN/control
+        sed -i 's/0.0.0/${{steps.version.outputs.v}}/g' EliteSx2Mqtt/DEBIAN/control
         DIR=elitesx2mqtt_${{steps.version.outputs.v}}_amd64/opt/bin/elitesx2mqtt
         mkdir -p $DIR
         cp -r ${{env.DOTNET_ROOT}}/linux-x64/* DIR/
