@@ -9,6 +9,7 @@ public class Partition
 	public MqttAlarmControlPanelDiscoveryConfig Config { get; }
 
 	public PartitionState? State { get; set; }
+	public bool? AttachedZoneIsAlarming { get; set; }
 
 	public Partition(string name, int index, MqttAlarmControlPanelDiscoveryConfig config)
 	{

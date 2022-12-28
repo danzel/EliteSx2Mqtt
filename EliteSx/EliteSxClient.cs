@@ -38,6 +38,12 @@ public interface IEliteSxClient
 	Task<PartitionStatusResponse> GetPartitionStatus();
 	Task<ZoneStatusResponse> GetZoneStatus();
 	Task<OutputStatusResponse> GetOutputStatus();
+
+	/// <summary>
+	/// Get the config (as fetched on Settings - Config files)
+	/// </summary>
+	/// <param name="users">How many users to fetch. As we don't decode users set it to 1 to run quickest. Set to 0 to fetch them all</param>
+	Task<ConfigResponse> GetConfig(int users);
 }
 
 public class EliteSxClient : BackgroundService, IEliteSxClient
@@ -235,10 +241,7 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 		return await Get<ZoneStatusResponse>("zstats.xml", "zone status");
 	}
 
-	/// <summary>
-	/// Get the config (as fetched on Settings - Config files)
-	/// </summary>
-	/// <param name="users">How many users to fetch. As we don't decode users set it to 1 to run quickest. Set to 0 to fetch them all</param>
+	/// <inheritdoc/>
 	public async Task<ConfigResponse> GetConfig(int users)
 	{
 		return await Get<ConfigResponse>("config.cfx?n=" + users, "config");

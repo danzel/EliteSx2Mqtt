@@ -71,8 +71,8 @@ public class PollToMqtt : BackgroundService
 			//Publish state when it changes
 			try
 			{
+				await UpdateZones(); //Partitions uses zones status, so update zones first
 				await UpdatePartitions();
-				await UpdateZones();
 				await UpdateOutputs();
 			}
 			catch (Exception ex) when (failuresInARow > 0 && failuresInARow % 10 == 0)
@@ -121,6 +121,7 @@ public class PollToMqtt : BackgroundService
 		_logger.LogInformation("Fetching Zone names");
 
 		var zoneNames = await _client.GetZoneNames();
+		var clientConfig = await _client.GetConfig(1);
 		Zones = new Zone[zoneNames.Names.Length];
 		for (var i = 0; i < zoneNames.Names.Length; i++)
 		{
@@ -136,7 +137,8 @@ public class PollToMqtt : BackgroundService
 			}.AddDefaultAvailabilityTopic(_mqtt)
 			.PopulateStateTopic(_mqtt);
 
-			Zones[i] = new Zone(z.Name, z.Index, config);
+			var partitions = clientConfig.Zones.Single(cz => cz.Id == z.Index).PartitionNumbers.Select(pn => pn.Id).ToArray();
+			Zones[i] = new Zone(z.Name, z.Index, partitions, config);
 		}
 	}
 
@@ -190,27 +192,31 @@ public class PollToMqtt : BackgroundService
 				continue;
 			}
 
+			bool attachedZoneIsAlarming = Zones!.Any(z => z.State is ZoneState.Alarm or ZoneState.Alarm24hr && z.Partitions.Contains(matching.Index));
+
 			//Publish on state change
-			if (matching.State != s.State)
+			if (matching.State != s.State || matching.AttachedZoneIsAlarming != attachedZoneIsAlarming)
 			{
 				matching.State = s.State;
+				matching.AttachedZoneIsAlarming = attachedZoneIsAlarming;
 
-				//TODO: What state is alarming!? (Is it just on the zone?)
 				string? payload = s.State switch
 				{
 					PartitionState.Disarmed => "disarmed",
 					PartitionState.AwayArmed => "armed_away",
-					PartitionState.StayArmed => "armed_home",//Not sure about this one
+					PartitionState.StayArmed => "armed_home", //Not sure about this one
 					PartitionState.StayExiting => "pending",
 					PartitionState.AwayExiting => "pending",
-					PartitionState.JuvenileArmed => "armed_custom_bypass",//Not sure about this one
+					PartitionState.JuvenileArmed => "armed_custom_bypass", //Not sure about this one
 					PartitionState.JuvenileExiting => "pending",
-					PartitionState.DisarmedAlarm => "disarmed", //TODO: Does this mean we are alarming!?
+					PartitionState.DisarmedAlarm => "disarmed",
 					PartitionState.DisarmedScheduled => "disarmed",
 					PartitionState.DisArming => "disarming",
 					PartitionState.UnknownState => "unknown",
 					_ => null,
 				};
+				if (attachedZoneIsAlarming)
+					payload = "triggered";
 
 				if (payload == null)
 				{
