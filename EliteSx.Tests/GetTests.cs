@@ -137,4 +137,19 @@ public class GetTests : BaseHelpers
 		Assert.Equal("System", result.Info[0].Lbl);
 		Assert.Equal("Elite-SX (12345678) Ver 10.0.307", result.Info[0].Val);
 	}
+
+	[Fact]
+	public async Task CanDeserializeConfig()
+	{
+		var result = await XmlGet("config.cfx?n=1", """
+<ELITE-SX><zones><zone id="1"><name>Lounge</name><partns><pn id="1" /></partns></zone></zones></ELITE-SX>
+""", c => c.GetConfig(1));
+
+		var z = Assert.Single(result.Zones);
+		Assert.Equal("Lounge", z.Name);
+		Assert.Equal(1, z.Id);
+
+		var pn = Assert.Single(z.PartitionNumbers);
+		Assert.Equal(1, pn.Id);
+	}
 }
