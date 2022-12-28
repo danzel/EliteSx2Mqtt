@@ -39,11 +39,11 @@ jobs:
     - name: Create Deb Package
       run: |
         sed -i 's/0.0.0/${{steps.version.outputs.v}}/g' EliteSx2Mqtt/DEBIAN/control
-        DIR=elitesx2mqtt_${{steps.version.outputs.v}}_amd64/opt/bin/elitesx2mqtt
-        mkdir -p $DIR
-        cp -r ${{env.DOTNET_ROOT}}/linux-x64/* $DIR/
-        cp -r EliteSx2Mqtt/DEBIAN $DIR/
-        dpkg-deb --build --root-owner-group elitesx2mqtt_${{steps.version.outputs.v}}_amd64
+        ROOTDIR=elitesx2mqtt_${{steps.version.outputs.v}}_amd64
+        mkdir -p $ROOTDIR/opt/bin/elitesx2mqtt
+        cp -r ${{env.DOTNET_ROOT}}/linux-x64/* $ROOTDIR/opt/bin/elitesx2mqtt/
+        cp -r EliteSx2Mqtt/DEBIAN $ROOTDIR/
+        dpkg-deb --build --root-owner-group $ROOTDIR
 
     - name: Upload as zip
       uses: actions/upload-artifact@v3
