@@ -26,4 +26,10 @@
     <ProjectReference Include="..\EliteSx\EliteSx.csproj" />
     <ProjectReference Include="..\ToMqttNet\src\ToMqttNet\ToMqttNet.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.Local.json.TEMPLATE">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

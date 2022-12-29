@@ -1,0 +1,20 @@
+﻿{
+  "Mqtt": {
+    "ClientId": "",
+    "NodeId": "",
+
+    "Server": "",
+
+    "Username": "",
+    "Password": ""
+  },
+  "EliteSx": {
+    "IpAddress": "",
+    "Username": "",
+    "Password": ""
+  },
+  //Optional https://docs.sentry.io/platforms/dotnet/guides/extensions-logging/
+  "Sentry": {
+    "Dsn": null
+  }
+}
