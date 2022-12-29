@@ -143,6 +143,7 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 					_guid = null;
 					_authExpireAge = null;
 					_authExpireTimeSeconds = null;
+					_timeSinceLastPoll = null;
 
 					try
 					{
