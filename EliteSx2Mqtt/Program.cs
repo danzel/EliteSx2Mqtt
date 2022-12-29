@@ -19,6 +19,10 @@ IHost host = Host.CreateDefaultBuilder(args)
 
 		services.AddMqttConnection(c => context.Configuration.GetSection("Mqtt").Bind(c));
 	})
+	.ConfigureLogging(c =>
+	{
+		c.AddSentry();
+	})
 	.Build();
 
 await host.RunAsync();
