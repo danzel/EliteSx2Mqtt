@@ -53,6 +53,7 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 	private readonly EliteSxClientOptions _options;
 
 	private readonly SemaphoreSlim _authLock = new(1);
+	private readonly SemaphoreSlim _httpLock = new(1);
 	private string? _guid;
 
 	private int? _authExpireTimeSeconds;
@@ -163,22 +164,30 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 	private async Task LogIn()
 	{
-		_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
+		await _httpLock.WaitAsync();
+		try
+		{
+			_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
 
-		var content = new FormUrlEncodedContent(
-			new Dictionary<string, string>
-			{
+			var content = new FormUrlEncodedContent(
+				new Dictionary<string, string>
+				{
 					{ "user", _options.Username },
 					{ "pass", _options.Password },
 					{ "guid", _guid }
-			});
-		var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds}", content);
-		var responseStr = await response.Content.ReadAsStringAsync();
+				});
+			var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds}", content);
+			var responseStr = await response.Content.ReadAsStringAsync();
 
-		if (responseStr != "ok")
-			throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
+			if (responseStr != "ok")
+				throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
 
-		_hasLoggedInOnce.TrySetResult();
+			_hasLoggedInOnce.TrySetResult();
+		}
+		finally
+		{
+			_httpLock.Release();
+		}
 	}
 
 	private async Task PollAuth(string path)
@@ -192,13 +201,21 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 	private async Task<T> Get<T>(string path, string textForError) where T : class
 	{
-		using var response = await _httpClient.GetStreamAsync(GetUrl(path));
-		var result = new XmlSerializer(typeof(T)).Deserialize(response) as T;
+		await _httpLock.WaitAsync();
+		try
+		{
+			using var response = await _httpClient.GetStreamAsync(GetUrl(path));
+			var result = new XmlSerializer(typeof(T)).Deserialize(response) as T;
 
-		if (result == null)
-			throw new Exception($"Failed to fetch {textForError}");
+			if (result == null)
+				throw new Exception($"Failed to fetch {textForError}");
 
-		return result;
+			return result;
+		}
+		finally
+		{
+			_httpLock.Release();
+		}
 	}
 
 	public async Task<PrivilegesResponse> GetPrivileges()
@@ -249,17 +266,25 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 	private async Task Post(string path, string content)
 	{
-		path = $"http://{_options.IpAddress}/{path}";
+		await _httpLock.WaitAsync();
+		try
+		{
+			path = $"http://{_options.IpAddress}/{path}";
 
-		//Cannot use FormUrlEncodedContent here as the fields need to be separated by ?, not by &
-		var stringContent = new StringContent(content, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
+			//Cannot use FormUrlEncodedContent here as the fields need to be separated by ?, not by &
+			var stringContent = new StringContent(content, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
 
-		using var response = await _httpClient.PostAsync(path, stringContent);
-		response.EnsureSuccessStatusCode();
-		var result = await response.Content.ReadAsStringAsync();
+			using var response = await _httpClient.PostAsync(path, stringContent);
+			response.EnsureSuccessStatusCode();
+			var result = await response.Content.ReadAsStringAsync();
 
-		if (result != "Success")
-			throw new Exception($"Expected 'Success' but received '{result}'");
+			if (result != "Success")
+				throw new Exception($"Expected 'Success' but received '{result}'");
+		}
+		finally
+		{
+			_httpLock.Release();
+		}
 	}
 
 	public async Task ControlOutput(int outputIndex, DesiredOutputState desired)
