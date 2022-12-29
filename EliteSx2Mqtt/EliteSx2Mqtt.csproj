@@ -31,5 +31,8 @@
     <None Update="appsettings.Local.json.TEMPLATE">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="elitesx2mqtt.service">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
