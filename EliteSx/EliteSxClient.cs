@@ -181,7 +181,7 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 			var responseStr = await response.Content.ReadAsStringAsync();
 
 			if (responseStr != "ok")
-				throw new Exception($"Login failed. Expected 'ok', received '{responseStr}");
+				throw new Exception($"Login failed. Expected 'ok', received '{responseStr}'");
 
 			_hasLoggedInOnce.TrySetResult();
 		}
