@@ -1,7 +1,8 @@
 ﻿{
   "Mqtt": {
+    //https://www.home-assistant.io/integrations/mqtt/#discovery-messages
     "ClientId": "",
-    "NodeId": "",
+    "NodeId": "elitesx2mqtt",
 
     "Server": "",
 
