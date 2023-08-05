@@ -121,7 +121,7 @@ public class PollToMqtt : BackgroundService
 		_logger.LogInformation("Fetching Zone names");
 
 		var zoneNames = await _client.GetZoneNames();
-		var clientConfig = await _client.GetConfig(1);
+		var clientConfig = await _client.GetConfig(10);
 		Zones = new Zone[zoneNames.Names.Length];
 		for (var i = 0; i < zoneNames.Names.Length; i++)
 		{
