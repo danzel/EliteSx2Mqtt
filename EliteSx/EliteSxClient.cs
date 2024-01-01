@@ -147,7 +147,11 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 					try
 					{
+						_logger.LogInformation("Attempting authentication");
 						await LogIn();
+
+						_logger.LogDebug("Polling authentication");
+						await PollAuth("poll.xml");
 					}
 					catch (Exception ex2)
 					{
