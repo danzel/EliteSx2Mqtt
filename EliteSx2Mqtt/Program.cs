@@ -21,7 +21,7 @@ IHost host = Host.CreateDefaultBuilder(args)
 	})
 	.ConfigureLogging(c =>
 	{
-		c.AddSentry();
+		c.AddSentry(o => o.MinimumEventLevel = LogLevel.Warning);
 	})
 	.Build();
 

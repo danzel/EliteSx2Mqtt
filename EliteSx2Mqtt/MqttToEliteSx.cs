@@ -58,7 +58,7 @@ internal class MqttToEliteSx : BackgroundService
 			var output = _pollToMqtt.Outputs!.SingleOrDefault(p => p.Config.CommandTopic == e.ApplicationMessage.Topic);
 			if (partition != null)
 			{
-				_logger.LogInformation("Would change partition {name} to {desired}", partition.Name, payload);
+				_logger.LogInformation("Updating partition {name} to {desired}", partition.Name, payload);
 				//https://www.home-assistant.io/integrations/alarm_control_panel.mqtt/#payload_arm_away
 				try
 				{
@@ -87,7 +87,7 @@ internal class MqttToEliteSx : BackgroundService
 			}
 			else if (output != null)
 			{
-				_logger.LogInformation("Would change output {name} to {desired}", output.Name, payload);
+				_logger.LogInformation("Updating output {name} to {desired}", output.Name, payload);
 				//https://www.home-assistant.io/integrations/switch.mqtt/#payload_off
 				try
 				{
