@@ -321,7 +321,7 @@ public class PollToMqtt : BackgroundService
 	{
 		await _mqtt.PublishAsync(new MqttApplicationMessage
 		{
-			Payload = Encoding.UTF8.GetBytes(payload),
+			PayloadSegment = Encoding.UTF8.GetBytes(payload),
 			Topic = config.StateTopic,
 			Retain = true
 		});
