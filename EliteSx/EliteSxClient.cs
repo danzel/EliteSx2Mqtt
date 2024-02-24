@@ -53,7 +53,7 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 	private readonly EliteSxClientOptions _options;
 
 	private readonly SemaphoreSlim _authLock = new(1);
-	private readonly SemaphoreSlim _httpLock = new(1);
+	private bool _authPollFetchProgressInstead = false;
 	private string? _guid;
 
 	private int? _authExpireTimeSeconds;
@@ -131,8 +131,16 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 						//UI hits this every 5 seconds, if you don't you get 404 (I assume we get logged out)
 						else if (_timeSinceLastPoll.Elapsed >= TimeSpan.FromSeconds(5))
 						{
-							_logger.LogDebug("Polling authentication");
-							await PollAuth("poll.xml");
+							if (_authPollFetchProgressInstead)
+							{
+								_logger.LogDebug("Polling progress (for auth)");
+								await Get<ProgressResponse>("progress.xml", "Fetching progress.xml as auth while downloading config");
+							}
+							else
+							{
+								_logger.LogDebug("Polling authentication");
+								await PollAuth("poll.xml");
+							}
 						}
 					}
 				}
@@ -169,30 +177,22 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 	private async Task LogIn()
 	{
-		await _httpLock.WaitAsync();
-		try
-		{
-			_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
+		_guid = "GUID-" + Guid.NewGuid().ToString().ToLowerInvariant();
 
-			var content = new FormUrlEncodedContent(
-				new Dictionary<string, string>
-				{
+		var content = new FormUrlEncodedContent(
+			new Dictionary<string, string>
+			{
 					{ "user", _options.Username },
 					{ "pass", _options.Password },
 					{ "guid", _guid }
-				});
-			var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds}", content);
-			var responseStr = await response.Content.ReadAsStringAsync();
+			});
+		var response = await _httpClient.PostAsync($"http://{_options.IpAddress}/li.php?nc={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", content);
+		var responseStr = await response.Content.ReadAsStringAsync();
 
-			if (responseStr != "ok")
-				throw new Exception($"Login failed. Expected 'ok', received '{responseStr}'");
+		if (responseStr != "ok")
+			throw new Exception($"Login failed. Expected 'ok', received '{responseStr}'");
 
-			_hasLoggedInOnce.TrySetResult();
-		}
-		finally
-		{
-			_httpLock.Release();
-		}
+		_hasLoggedInOnce.TrySetResult();
 	}
 
 	private async Task PollAuth(string path)
@@ -206,21 +206,13 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 
 	private async Task<T> Get<T>(string path, string textForError) where T : class
 	{
-		await _httpLock.WaitAsync();
-		try
-		{
-			using var response = await _httpClient.GetStreamAsync(GetUrl(path));
-			var result = new XmlSerializer(typeof(T)).Deserialize(response) as T;
+		using var response = await _httpClient.GetStreamAsync(GetUrl(path));
+		var result = new XmlSerializer(typeof(T)).Deserialize(response) as T;
 
-			if (result == null)
-				throw new Exception($"Failed to fetch {textForError}");
+		if (result == null)
+			throw new Exception($"Failed to fetch {textForError}");
 
-			return result;
-		}
-		finally
-		{
-			_httpLock.Release();
-		}
+		return result;
 	}
 
 	public async Task<PrivilegesResponse> GetPrivileges()
@@ -266,30 +258,31 @@ public class EliteSxClient : BackgroundService, IEliteSxClient
 	/// <inheritdoc/>
 	public async Task<ConfigResponse> GetConfig(int users)
 	{
-		return await Get<ConfigResponse>("config.cfx?n=" + users, "config");
+		//The UI doesn't poll auth while downloading, it polls progress.xml (it does it once a second)
+		_authPollFetchProgressInstead = true;
+		try
+		{
+			return await Get<ConfigResponse>("config.cfx?n=" + users, "config");
+		}
+		finally
+		{
+			_authPollFetchProgressInstead = false;
+		}
 	}
 
 	private async Task Post(string path, string content)
 	{
-		await _httpLock.WaitAsync();
-		try
-		{
-			path = $"http://{_options.IpAddress}/{path}";
+		path = $"http://{_options.IpAddress}/{path}";
 
-			//Cannot use FormUrlEncodedContent here as the fields need to be separated by ?, not by &
-			var stringContent = new StringContent(content, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
+		//Cannot use FormUrlEncodedContent here as the fields need to be separated by ?, not by &
+		var stringContent = new StringContent(content, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded; charset=UTF-8"));
 
-			using var response = await _httpClient.PostAsync(path, stringContent);
-			response.EnsureSuccessStatusCode();
-			var result = await response.Content.ReadAsStringAsync();
+		using var response = await _httpClient.PostAsync(path, stringContent);
+		response.EnsureSuccessStatusCode();
+		var result = await response.Content.ReadAsStringAsync();
 
-			if (result != "Success")
-				throw new Exception($"Expected 'Success' but received '{result}'");
-		}
-		finally
-		{
-			_httpLock.Release();
-		}
+		if (result != "Success")
+			throw new Exception($"Expected 'Success' but received '{result}'");
 	}
 
 	public async Task ControlOutput(int outputIndex, DesiredOutputState desired)
