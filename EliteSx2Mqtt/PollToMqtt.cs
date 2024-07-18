@@ -107,7 +107,9 @@ public class PollToMqtt : BackgroundService
 				Availability = new List<MqttDiscoveryAvailablilty>(),
 				CommandTopic = null!,
 				StateTopic = null!,
-				SupportedFeatures = new List<string> { "arm_away" }
+				SupportedFeatures = new List<string> { "arm_away" },
+				CodeArmRequired = false,
+				CodeDisarmRequired = false,
 			}.AddDefaultAvailabilityTopic(_mqtt)
 			.PopulateStateTopic(_mqtt)
 			.PopulateCommandTopic(_mqtt);
